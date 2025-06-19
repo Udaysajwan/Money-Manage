@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Student Money Manager Pro</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --success: #43aa8b;
+            --danger: #f94144;
+            --warning: #f8961e;
+            --info: #2a9d8f;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --online: #2a9d8f;
+            --offline: #f8961e;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e6f0ff 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        
+        .container-main {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(120deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 12px;
+            padding: 25px 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 20px rgba(67, 97, 238, 0.15);
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            transition: transform 0.3s;
+            border-top: 4px solid;
+        }
+        
+        .summary-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-balance {
+            border-top-color: var(--primary);
+        }
+        
+        .card-income {
+            border-top-color: var(--success);
+        }
+        
+        .card-expense {
+            border-top-color: var(--danger);
+        }
+        
+        .card-online {
+            border-top-color: var(--online);
+        }
+        
+        .card-offline {
+            border-top-color: var(--offline);
+        }
+        
+        .summary-card h5 {
+            font-size: 0.95rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+            color: #777;
+        }
+        
+        .summary-card .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        .transaction-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .transaction-table th {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #e9ecef;
+            cursor: pointer;
+        }
+        
+        .transaction-table th:hover {
+            background-color: #e9ecef;
+        }
+        
+        .transaction-table td {
+            padding: 12px 20px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .transaction-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .transaction-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .income-row .amount {
+            color: var(--success);
+            font-weight: 600;
+        }
+        
+        .expense-row .amount {
+            color: var(--danger);
+            font-weight: 600;
+        }
+        
+        .online-badge {
+            background-color: rgba(42, 157, 143, 0.15);
+            color: var(--online);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .offline-badge {
+            background-color: rgba(248, 150, 30, 0.15);
+            color: var(--offline);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .remove-btn {
+            color: #f94144;
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+        }
+        
+        .remove-btn:hover {
+            opacity: 1;
+            background-color: rgba(249, 65, 68, 0.1);
+        }
+        
+        .filter-bar {
+            background-color: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .sort-indicator {
+            margin-left: 5px;
+            font-size: 0.8rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            color: #e9ecef;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #495057;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .summary-card .value {
+                font-size: 1.5rem;
+            }
+            
+            .filter-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container container-main">
+    <div class="header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1><i class="fas fa-wallet me-3"></i>Student Money Manager Pro</h1>
+                <p class="mb-0">Track your online & offline finances in one place</p>
+            </div>
+            <div class="d-flex align-items-center">
+                <div class="text-end">
+                    <div class="balance h3 mb-1">Balance: <span id="balance">₹0.00</span></div>
+                    <small class="opacity-75">Updated just now</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-3 col-md-6">
+            <div class="summary-card card-income">
+                <h5><i class="fas fa-arrow-down me-2"></i>Income</h5>
+                <div class="value" id="income-total">₹0.00</div>
+                <div class="text-muted">This month</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="summary-card card-expense">
+                <h5><i class="fas fa-arrow-up me-2"></i>Expenses</h5>
+                <div class="value" id="expense-total">₹0.00</div>
+                <div class="text-muted">This month</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="summary-card card-online">
+                <h5><i class="fas fa-globe me-2"></i>Online Money</h5>
+                <div class="value" id="online-total">₹0.00</div>
+                <div class="text-muted">Available balance</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="summary-card card-offline">
+                <h5><i class="fas fa-money-bill-wave me-2"></i>Cash</h5>
+                <div class="value" id="offline-total">₹0.00</div>
+                <div class="text-muted">Physical money</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="form-container">
+        <h3 class="mb-4"><i class="fas fa-plus-circle me-2"></i>Add Transaction</h3>
+        <form id="transactionForm" class="row g-3">
+            <div class="col-md-6">
+                <label for="desc" class="form-label">Description</label>
+                <input type="text" class="form-control" id="desc" placeholder="e.g. Pocket money, Snacks, Books" required>
+            </div>
+            <div class="col-md-3">
+                <label for="amount" class="form-label">Amount (₹)</label>
+                <input type="number" class="form-control" id="amount" placeholder="0.00" step="0.01" min="0.01" required>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Transaction Type</label>
+                <select class="form-select" id="type" required>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Money Type</label>
+                <div class="d-flex gap-2">
+                    <div class="form-check flex-grow-1">
+                        <input class="form-check-input" type="radio" name="moneyType" id="onlineType" value="online" checked>
+                        <label class="form-check-label w-100 p-2 rounded border" for="onlineType">
+                            <i class="fas fa-globe me-1"></i> Online (UPI/Bank)
+                        </label>
+                    </div>
+                    <div class="form-check flex-grow-1">
+                        <input class="form-check-input" type="radio" name="moneyType" id="offlineType" value="offline">
+                        <label class="form-check-label w-100 p-2 rounded border" for="offlineType">
+                            <i class="fas fa-money-bill-wave me-1"></i> Cash
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="date" class="form-label">Date</label>
+                <input type="datetime-local" class="form-control" id="date" required>
+            </div>
+            <div class="col-12 mt-2">
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="fas fa-plus me-2"></i>Add Transaction
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <div class="table-container">
+        <div class="filter-bar">
+            <div class="d-flex align-items-center">
+                <label for="monthFilter" class="form-label mb-0 me-2">Filter by Month:</label>
+                <select class="form-select" id="monthFilter" style="width: 180px;"></select>
+            </div>
+            <div class="d-flex align-items-center">
+                <label for="typeFilter" class="form-label mb-0 me-2">Transaction Type:</label>
+                <select class="form-select" id="typeFilter" style="width: 120px;">
+                    <option value="all">All</option>
+                    <option value="income">Income</option>
+                    <option value="expense">Expense</option>
+                </select>
+            </div>
+            <div class="d-flex align-items-center">
+                <label for="moneyFilter" class="form-label mb-0 me-2">Money Type:</label>
+                <select class="form-select" id="moneyFilter" style="width: 120px;">
+                    <option value="all">All</option>
+                    <option value="online">Online</option>
+                    <option value="offline">Cash</option>
+                </select>
+            </div>
+            <div class="d-flex align-items-center ms-auto">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search transactions..." style="width: 200px;">
+            </div>
+        </div>
+        
+        <div class="table-responsive">
+            <table class="transaction-table">
+                <thead>
+                    <tr>
+                        <th data-sort="date">Date <span class="sort-indicator">↓</span></th>
+                        <th data-sort="desc">Description</th>
+                        <th data-sort="type">Type</th>
+                        <th data-sort="moneyType">Money Type</th>
+                        <th data-sort="amount">Amount</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="transactionTableBody">
+                    <!-- Transactions will appear here -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="emptyState" class="empty-state d-none">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <h4>No transactions yet</h4>
+            <p>Add your first transaction to get started</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let transactions = [];
+    let sortField = 'date';
+    let sortDirection = 'desc';
+
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load transactions from localStorage
+        if(localStorage.getItem('transactions')) {
+            transactions = JSON.parse(localStorage.getItem('transactions'));
+        }
+        
+        // Set current date as default
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('date').value = localDateTime;
+        
+        // Set up event listeners
+        document.getElementById('transactionForm').addEventListener('submit', addTransaction);
+        document.getElementById('monthFilter').addEventListener('change', renderTransactions);
+        document.getElementById('typeFilter').addEventListener('change', renderTransactions);
+        document.getElementById('moneyFilter').addEventListener('change', renderTransactions);
+        document.getElementById('searchInput').addEventListener('input', renderTransactions);
+        
+        // Set up sorting
+        document.querySelectorAll('.transaction-table th[data-sort]').forEach(th => {
+            th.addEventListener('click', () => {
+                const field = th.getAttribute('data-sort');
+                if (sortField === field) {
+                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                } else {
+                    sortField = field;
+                    sortDirection = 'desc';
+                }
+                
+                // Update sort indicators
+                document.querySelectorAll('.sort-indicator').forEach(ind => ind.innerHTML = '');
+                th.querySelector('.sort-indicator').innerHTML = sortDirection === 'asc' ? '↑' : '↓';
+                
+                renderTransactions();
+            });
+        });
+        
+        // Initial render
+        populateMonthFilter();
+        renderTransactions();
+    });
+
+    // Add a new transaction
+    function addTransaction(e) {
+        e.preventDefault();
+        
+        const desc = document.getElementById('desc').value.trim();
+        const amount = parseFloat(document.getElementById('amount').value);
+        const type = document.getElementById('type').value;
+        const moneyType = document.querySelector('input[name="moneyType"]:checked').value;
+        const date = document.getElementById('date').value;
+        
+        if (!desc || isNaN(amount) || amount <= 0) {
+            alert('Please enter valid details.');
+            return;
+        }
+        
+        transactions.push({
+            id: Date.now(),
+            desc,
+            amount,
+            type,
+            moneyType,
+            date
+        });
+        
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+        renderTransactions();
+        document.getElementById('transactionForm').reset();
+        
+        // Reset date to current
+        const now = new Date();
+        const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        document.getElementById('date').value = localDateTime;
+    }
+
+    // Populate month filter dropdown
+    function populateMonthFilter() {
+        const monthFilter = document.getElementById('monthFilter');
+        const months = new Set();
+        const monthNames = ["January", "February", "March", "April", "May", "June", 
+                          "July", "August", "September", "October", "November", "December"];
+        
+        // Add current month first
+        const now = new Date();
+        const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        months.add(currentMonth);
+        
+        // Add months from transactions
+        transactions.forEach(t => {
+            const date = new Date(t.date);
+            const month = date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+            months.add(month);
+        });
+        
+        // Convert to array and sort
+        let monthsArray = Array.from(months).sort((a, b) => b.localeCompare(a));
+        
+        // Create options
+        let options = '<option value="all">All Months</option>';
+        monthsArray.forEach(month => {
+            const [year, monthNum] = month.split('-');
+            const monthName = monthNames[parseInt(monthNum) - 1];
+            options += `<option value="${month}" ${month === currentMonth ? 'selected' : ''}>${monthName} ${year}</option>`;
+        });
+        
+        monthFilter.innerHTML = options;
+    }
+
+    // Render transactions to the table
+    function renderTransactions() {
+        const tableBody = document.getElementById('transactionTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const monthFilter = document.getElementById('monthFilter').value;
+        const typeFilter = document.getElementById('typeFilter').value;
+        const moneyFilter = document.getElementById('moneyFilter').value;
+        const searchText = document.getElementById('searchInput').value.toLowerCase();
+        
+        // Filter transactions
+        let filteredTransactions = transactions.filter(t => {
+            // Filter by month
+            if (monthFilter !== 'all') {
+                const transactionMonth = t.date.slice(0, 7);
+                if (transactionMonth !== monthFilter) return false;
+            }
+            
+            // Filter by type
+            if (typeFilter !== 'all' && t.type !== typeFilter) return false;
+            
+            // Filter by money type
+            if (moneyFilter !== 'all' && t.moneyType !== moneyFilter) return false;
+            
+            // Filter by search text
+            if (searchText && !t.desc.toLowerCase().includes(searchText)) return false;
+            
+            return true;
+        });
+        
+        // Sort transactions
+        filteredTransactions.sort((a, b) => {
+            let aValue, bValue;
+            
+            if (sortField === 'date') {
+                aValue = new Date(a.date);
+                bValue = new Date(b.date);
+            } else if (sortField === 'amount') {
+                aValue = a.amount;
+                bValue = b.amount;
+            } else {
+                aValue = a[sortField];
+                bValue = b[sortField];
+            }
+            
+            if (sortDirection === 'asc') {
+                return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+            } else {
+                return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+            }
+        });
+        
+        // Update UI based on filtered results
+        if (filteredTransactions.length === 0) {
+            tableBody.innerHTML = '';
+            emptyState.classList.remove('d-none');
+        } else {
+            emptyState.classList.add('d-none');
+            
+            // Generate table rows
+            tableBody.innerHTML = filteredTransactions.map(t => {
+                const date = new Date(t.date);
+                const formattedDate = date.toLocaleDateString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric'
+                }) + ' ' + date.toLocaleTimeString('en-IN', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                return `
+                    <tr class="${t.type}-row">
+                        <td>${formattedDate}</td>
+                        <td>${t.desc}</td>
+                        <td>${t.type === 'income' ? 
+                            '<span class="badge bg-success bg-opacity-10 text-success">Income</span>' : 
+                            '<span class="badge bg-danger bg-opacity-10 text-danger">Expense</span>'}</td>
+                        <td>${t.moneyType === 'online' ? 
+                            '<span class="online-badge"><i class="fas fa-globe me-1"></i> Online</span>' : 
+                            '<span class="offline-badge"><i class="fas fa-money-bill-wave me-1"></i> Cash</span>'}</td>
+                        <td class="amount">${t.type === 'income' ? '+' : '-'}₹${t.amount.toFixed(2)}</td>
+                        <td>
+                            <button class="remove-btn" data-id="${t.id}" title="Remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Add event listeners for remove buttons
+            document.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = parseInt(this.getAttribute('data-id'));
+                    if(confirm('Are you sure you want to remove this transaction?')) {
+                        transactions = transactions.filter(t => t.id !== id);
+                        localStorage.setItem('transactions', JSON.stringify(transactions));
+                        populateMonthFilter();
+                        renderTransactions();
+                    }
+                });
+            });
+        }
+        
+        // Update summary cards
+        updateSummaryCards();
+    }
+
+    // Update the summary cards with current financial data
+    function updateSummaryCards() {
+        let balance = 0;
+        let incomeTotal = 0;
+        let expenseTotal = 0;
+        let onlineTotal = 0;
+        let offlineTotal = 0;
+        
+        // Calculate current month values
+        const now = new Date();
+        const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+        
+        transactions.forEach(t => {
+            const amount = t.amount;
+            
+            // Update overall balance
+            if (t.type === 'income') {
+                balance += amount;
+            } else {
+                balance -= amount;
+            }
+            
+            // Update money type balances
+            if (t.moneyType === 'online') {
+                if (t.type === 'income') onlineTotal += amount;
+                else onlineTotal -= amount;
+            } else {
+                if (t.type === 'income') offlineTotal += amount;
+                else offlineTotal -= amount;
+            }
+            
+            // Calculate monthly totals
+            const transactionMonth = t.date.slice(0, 7);
+            if (transactionMonth === currentMonth) {
+                if (t.type === 'income') {
+                    incomeTotal += amount;
+                } else {
+                    expenseTotal += amount;
+                }
+            }
+        });
+        
+        // Update UI
+        document.getElementById('balance').textContent = `₹${balance.toFixed(2)}`;
+        document.getElementById('income-total').textContent = `₹${incomeTotal.toFixed(2)}`;
+        document.getElementById('expense-total').textContent = `₹${expenseTotal.toFixed(2)}`;
+        document.getElementById('online-total').textContent = `₹${Math.max(onlineTotal, 0).toFixed(2)}`;
+        document.getElementById('offline-total').textContent = `₹${Math.max(offlineTotal, 0).toFixed(2)}`;
+    }
+</script>
+</body>
+</html>
