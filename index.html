@@ -488,6 +488,7 @@
     let transactions = [];
     let sortField = 'date';
     let sortDirection = 'desc';
+    let lastRenderedDate = new Date().toDateString();
 
     // Initialize the app
     document.addEventListener('DOMContentLoaded', function() {
@@ -530,6 +531,9 @@
         // Initial render
         populateDateFilter();
         renderTransactions();
+
+        // Set up auto-update at midnight
+        setupMidnightRefresh();
     });
 
     // Add a new transaction
@@ -694,6 +698,24 @@
         
         // Update summary cards
         updateSummaryCards();
+    }
+
+    // --- Auto-refresh at midnight ---
+    function setupMidnightRefresh() {
+        function scheduleNextRefresh() {
+            const now = new Date();
+            const next = new Date(now);
+            next.setHours(24, 0, 0, 0); // Next midnight
+            const msUntilMidnight = next - now;
+            setTimeout(() => {
+                // On midnight, refresh UI and reschedule
+                lastRenderedDate = new Date().toDateString();
+                populateDateFilter();
+                renderTransactions();
+                scheduleNextRefresh();
+            }, msUntilMidnight + 1000); // Add 1s buffer
+        }
+        scheduleNextRefresh();
     }
 
     // Update the summary cards with current financial data
