@@ -756,12 +756,40 @@
         </div>
     </div>
 
+    <!-- Add Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  // Your Firebase config here
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    // ...other config...
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+</script>
+
     <script>
         // On load, set all dashboard values to zero and clear transactions
         document.addEventListener('DOMContentLoaded', function() {
             // --- State ---
             let transactions = [];
             let savings = [];
+
+            // Load from localStorage if available
+            if (localStorage.getItem('transactions')) {
+                try {
+                    transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                } catch (e) { transactions = []; }
+            }
+            if (localStorage.getItem('savings')) {
+                try {
+                    savings = JSON.parse(localStorage.getItem('savings')) || [];
+                } catch (e) { savings = []; }
+            }
 
             // Set dashboard values to zero
             updateDashboard();
@@ -831,9 +859,12 @@
                     description,
                     amount
                 });
+                // Save to localStorage
+                localStorage.setItem('transactions', JSON.stringify(transactions));
                 this.reset();
                 updateDashboard();
                 renderTransactions();
+                generateAITip(); // Update AI tip after transaction
             });
 
             document.getElementById('savingsForm').addEventListener('submit', function(e) {
@@ -853,10 +884,13 @@
                     description,
                     amount
                 });
+                // Save to localStorage
+                localStorage.setItem('savings', JSON.stringify(savings));
                 this.reset();
                 document.getElementById('savingsDate').value = today;
                 updateDashboard();
                 renderTransactions();
+                generateAITip(); // Update AI tip after savings
             });
 
             // Prevent zooming on input focus
@@ -868,6 +902,7 @@
 
             // Initial render
             renderTransactions();
+            generateAITip(); // Initial AI tip
 
             // --- Functions ---
             function updateDashboard() {
@@ -934,24 +969,101 @@
                     `;
                     tbody.appendChild(row);
                 });
-                // Add delete listeners
+                // Add delete listeners with confirmation
                 tbody.querySelectorAll('.action-cell button').forEach(btn => {
                     btn.addEventListener('click', function() {
+                        if (!confirm('Are you sure you want to delete this transaction?')) return;
                         const idx = parseInt(this.getAttribute('data-idx'));
                         // Figure out if it's a transaction or savings
                         if (idx < transactions.length) {
                             transactions.splice(idx, 1);
+                            localStorage.setItem('transactions', JSON.stringify(transactions));
                         } else {
                             savings.splice(idx - transactions.length, 1);
+                            localStorage.setItem('savings', JSON.stringify(savings));
                         }
                         updateDashboard();
                         renderTransactions();
+                        generateAITip(); // Update AI tip after deletion
                     });
                 });
             }
 
             function capitalize(str) {
                 return str.charAt(0).toUpperCase() + str.slice(1);
+            }
+
+            // --- AI Tip Generation ---
+            function generateAITip() {
+                // Gather stats
+                let income = 0, expense = 0, savingsTotal = 0;
+                let onlineIncome = 0, offlineIncome = 0, onlineExpense = 0, offlineExpense = 0;
+                let expenseCategories = {};
+                transactions.forEach(t => {
+                    if (t.type === 'income') {
+                        income += t.amount;
+                        if (t.mode === 'online') onlineIncome += t.amount;
+                        else offlineIncome += t.amount;
+                    } else if (t.type === 'expense') {
+                        expense += t.amount;
+                        if (t.mode === 'online') onlineExpense += t.amount;
+                        else offlineExpense += t.amount;
+                        if (t.category) {
+                            expenseCategories[t.category] = (expenseCategories[t.category] || 0) + t.amount;
+                        }
+                    }
+                });
+                savingsTotal = savings.reduce((sum, s) => sum + s.amount, 0);
+                const balance = income - expense;
+                // Analyze and generate tip
+                let tip = "";
+                if (income === 0 && expense === 0 && savingsTotal === 0) {
+                    tip = "Start by adding your income and expenses to get personalized financial insights!";
+                } else if (income > 0 && expense === 0) {
+                    tip = "You have income recorded but no expenses yet. Tracking expenses helps you understand your spending habits.";
+                } else if (income === 0 && expense > 0) {
+                    tip = "You have expenses but no income recorded. Make sure to log your income for a complete financial picture.";
+                } else if (expense > income) {
+                    tip = "Your expenses exceed your income. Consider reviewing your spending and look for areas to cut back.";
+                } else if (savingsTotal === 0 && income > 0) {
+                    tip = "You haven't added any savings yet. Try to set aside a portion of your income regularly.";
+                } else if (savingsTotal > 0 && savingsTotal < income * 0.1) {
+                    tip = "Your savings are less than 10% of your total income. Increasing your savings rate can help build financial security.";
+                } else if (Object.keys(expenseCategories).length > 0) {
+                    // Find top expense category
+                    let topCategory = Object.entries(expenseCategories).sort((a, b) => b[1] - a[1])[0];
+                    if (topCategory && topCategory[1] > expense * 0.3) {
+                        tip = `A large portion of your expenses (${(topCategory[1]/expense*100).toFixed(0)}%) is in "${capitalize(topCategory[0])}". Consider reviewing this category for potential savings.`;
+                    }
+                }
+                if (!tip) {
+                    // Default random tip
+                    tip = [
+                        "Great job tracking your finances! Review your spending regularly to stay on top.",
+                        "Consider setting a monthly savings goal to boost your financial health.",
+                        "Automate your savings for consistent growth.",
+                        "Review your largest expense categories for potential savings."
+                    ][Math.floor(Math.random() * 4)];
+                }
+                document.getElementById('aiTipsText').textContent = tip;
+
+                // Motivation quote (unchanged)
+                updateAIQuote();
+            }
+
+            function updateAIQuote() {
+                const quotes = [
+                    "Financial freedom is available to those who learn about it and work for it.",
+                    "It's not how much money you make, but how much money you keep, how hard it works for you, and how many generations you keep it for.",
+                    "Every rupee you save is a step closer to financial independence.",
+                    "Saving is a great habit but investing is what creates wealth.",
+                    "The habit of saving is itself an education; it fosters every virtue, teaches self-denial, cultivates the sense of order, trains to forethought, and so broadens the mind.",
+                    "Do not save what is left after spending, but spend what is left after saving.",
+                    "Wealth is not about having a lot of money; it's about having a lot of options.",
+                    "Financial peace isn't the acquisition of stuff. It's learning to live on less than you make."
+                ];
+                const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+                document.getElementById('aiQuoteText').textContent = randomQuote;
             }
         });
         
