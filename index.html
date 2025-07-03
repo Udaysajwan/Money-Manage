@@ -757,13 +757,20 @@
     </div>
 
     <script>
-        // Initialize date pickers and set default values
+        // On load, set all dashboard values to zero and clear transactions
         document.addEventListener('DOMContentLoaded', function() {
+            // --- State ---
+            let transactions = [];
+            let savings = [];
+
+            // Set dashboard values to zero
+            updateDashboard();
+
             // Set today's date as default for savings form
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('savingsDate').value = today;
             document.getElementById('dateFilter').value = today;
-            
+
             // Tab switching functionality
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
@@ -775,7 +782,7 @@
                     document.getElementById(`${tabId}-form`).classList.add('active');
                 });
             });
-            
+
             // Show/hide source/category based on transaction type
             const transactionType = document.getElementById('transactionType');
             const expenseCategoryGroup = document.getElementById('expenseCategoryGroup');
@@ -788,81 +795,164 @@
                     expenseCategoryGroup.style.display = 'none';
                 }
             });
-            
+
             // Filter functionality
             const dateFilter = document.getElementById('dateFilter');
             const typeFilter = document.getElementById('typeFilter');
             const clearFilterBtn = document.getElementById('clearDateFilter');
-            
+
             clearFilterBtn.addEventListener('click', function() {
                 dateFilter.value = '';
                 typeFilter.value = 'all';
-                filterTransactions();
+                renderTransactions();
             });
-            
-            dateFilter.addEventListener('change', filterTransactions);
-            typeFilter.addEventListener('change', filterTransactions);
-            
-            function filterTransactions() {
-                const rows = document.querySelectorAll('#transactionsBody tr');
-                const selectedDate = dateFilter.value;
-                const selectedType = typeFilter.value;
-                
-                rows.forEach(row => {
-                    const rowDate = row.cells[0].textContent.split(' ')[0];
-                    const rowType = row.cells[1].textContent.toLowerCase();
-                    
-                    const dateMatch = !selectedDate || rowDate === selectedDate;
-                    const typeMatch = selectedType === 'all' || rowType === selectedType;
-                    
-                    if (dateMatch && typeMatch) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            }
-            
+
+            dateFilter.addEventListener('change', renderTransactions);
+            typeFilter.addEventListener('change', renderTransactions);
+
             // Form submission handlers
             document.getElementById('transactionForm').addEventListener('submit', function(e) {
                 e.preventDefault();
-                alert('Transaction added successfully!');
+                const type = document.getElementById('transactionType').value;
+                const mode = document.getElementById('transactionMode').value;
+                const category = document.getElementById('expenseCategory').value;
+                const amount = parseFloat(document.getElementById('transactionAmount').value) || 0;
+                const description = document.getElementById('transactionDescription').value.trim();
+                const date = today + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                if (!type || !mode || amount <= 0) {
+                    alert('Please fill all required fields.');
+                    return;
+                }
+                transactions.push({
+                    date,
+                    type,
+                    mode,
+                    category: type === 'expense' ? category : (type === 'income' ? 'Salary' : ''),
+                    description,
+                    amount
+                });
                 this.reset();
+                updateDashboard();
+                renderTransactions();
             });
-            
+
             document.getElementById('savingsForm').addEventListener('submit', function(e) {
                 e.preventDefault();
-                alert('Savings deposit added successfully!');
+                const amount = parseFloat(document.getElementById('savingsAmountInput').value) || 0;
+                const date = document.getElementById('savingsDate').value + ' ' + new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const source = document.getElementById('savingsSource').value;
+                const description = document.getElementById('savingsDescription').value.trim();
+                if (amount <= 0) {
+                    alert('Please enter a valid savings amount.');
+                    return;
+                }
+                savings.push({
+                    date,
+                    type: 'savings',
+                    source,
+                    description,
+                    amount
+                });
                 this.reset();
                 document.getElementById('savingsDate').value = today;
+                updateDashboard();
+                renderTransactions();
             });
-            
-            // Delete transaction
-            const deleteButtons = document.querySelectorAll('.action-cell button');
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const row = this.closest('tr');
-                    if (confirm('Are you sure you want to delete this transaction?')) {
-                        row.remove();
-                        
-                        // Check if table is empty
-                        const tbody = document.getElementById('transactionsBody');
-                        if (tbody.children.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-receipt"></i><h3>No Transactions</h3><p>Add your first transaction to get started</p></td></tr>';
-                        }
-                    }
-                });
-            });
-            
-            // Update AI tips periodically
-            setInterval(updateAITips, 15000);
-            
+
             // Prevent zooming on input focus
             document.querySelectorAll('input, select, textarea').forEach(el => {
                 el.addEventListener('focus', function() {
                     document.body.style.zoom = "100%";
                 });
             });
+
+            // Initial render
+            renderTransactions();
+
+            // --- Functions ---
+            function updateDashboard() {
+                let income = 0, expense = 0, savingsTotal = 0;
+                let onlineIncome = 0, offlineIncome = 0, onlineExpense = 0, offlineExpense = 0;
+                transactions.forEach(t => {
+                    if (t.type === 'income') {
+                        income += t.amount;
+                        if (t.mode === 'online') onlineIncome += t.amount;
+                        else offlineIncome += t.amount;
+                    } else if (t.type === 'expense') {
+                        expense += t.amount;
+                        if (t.mode === 'online') onlineExpense += t.amount;
+                        else offlineExpense += t.amount;
+                    }
+                });
+                savingsTotal = savings.reduce((sum, s) => sum + s.amount, 0);
+                const balance = income - expense;
+                document.getElementById('currentBalanceAmount').textContent = '₹' + balance.toFixed(2);
+                document.getElementById('totalIncomeAmount').textContent = '₹' + income.toFixed(2);
+                document.getElementById('totalExpenseAmount').textContent = '₹' + expense.toFixed(2);
+                document.getElementById('savingsAmount').textContent = '₹' + savingsTotal.toFixed(2);
+                document.getElementById('onlineIncomeRow').innerHTML = '<strong>Online:</strong> ₹' + onlineIncome.toFixed(2);
+                document.getElementById('offlineIncomeRow').innerHTML = '<strong>Offline:</strong> ₹' + offlineIncome.toFixed(2);
+                document.getElementById('onlineExpenseRow').innerHTML = '<strong>Online:</strong> ₹' + onlineExpense.toFixed(2);
+                document.getElementById('offlineExpenseRow').innerHTML = '<strong>Offline:</strong> ₹' + offlineExpense.toFixed(2);
+            }
+
+            function renderTransactions() {
+                const tbody = document.getElementById('transactionsBody');
+                tbody.innerHTML = '';
+                // Merge transactions and savings for display
+                let all = transactions.map(t => ({...t, displayType: t.type, displayCategory: t.type === 'expense' ? t.category : (t.type === 'income' ? 'Salary' : '')}))
+                    .concat(savings.map(s => ({
+                        date: s.date,
+                        displayType: 'Savings',
+                        displayCategory: s.source.charAt(0).toUpperCase() + s.source.slice(1) + ' Savings',
+                        description: s.description,
+                        amount: s.amount
+                    })));
+                // Apply filters
+                const selectedDate = dateFilter.value;
+                const selectedType = typeFilter.value;
+                if (selectedDate) {
+                    all = all.filter(t => t.date.split(' ')[0] === selectedDate);
+                }
+                if (selectedType && selectedType !== 'all') {
+                    all = all.filter(t => t.displayType.toLowerCase() === selectedType);
+                }
+                if (all.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state"><i class="fas fa-receipt"></i><h3>No Transactions</h3><p>Add your first transaction to get started</p></td></tr>';
+                    return;
+                }
+                all.forEach((t, idx) => {
+                    const row = document.createElement('tr');
+                    row.className = (t.displayType === 'income' ? 'income-row' : (t.displayType === 'expense' ? 'expense-row' : (t.displayType === 'Savings' ? 'savings-row' : '')));
+                    row.innerHTML = `
+                        <td>${t.date}</td>
+                        <td>${capitalize(t.displayType)}</td>
+                        <td>${t.displayCategory || ''}</td>
+                        <td>${t.description || ''}</td>
+                        <td class="amount-cell">₹${t.amount.toFixed(2)}</td>
+                        <td class="action-cell"><button title="Delete" data-idx="${idx}"><i class="fas fa-trash"></i></button></td>
+                    `;
+                    tbody.appendChild(row);
+                });
+                // Add delete listeners
+                tbody.querySelectorAll('.action-cell button').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const idx = parseInt(this.getAttribute('data-idx'));
+                        // Figure out if it's a transaction or savings
+                        if (idx < transactions.length) {
+                            transactions.splice(idx, 1);
+                        } else {
+                            savings.splice(idx - transactions.length, 1);
+                        }
+                        updateDashboard();
+                        renderTransactions();
+                    });
+                });
+            }
+
+            function capitalize(str) {
+                return str.charAt(0).toUpperCase() + str.slice(1);
+            }
         });
         
         function updateAITips() {
