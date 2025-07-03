@@ -491,6 +491,120 @@
             font-size: 0.95rem;
         }
         
+        /* --- DARK THEME --- */
+        body.dark-theme {
+            background-color: #181c22;
+            color: #f5f7fa;
+        }
+        body.dark-theme header {
+            background: linear-gradient(135deg, #232b36, #1a5276);
+            color: #f5f7fa;
+        }
+        body.dark-theme .container {
+            background: none;
+        }
+        body.dark-theme .dashboard .card,
+        body.dark-theme .section,
+        body.dark-theme .form-container,
+        body.dark-theme .card,
+        body.dark-theme .table-responsive table {
+            background: #232b36;
+            color: #f5f7fa;
+            box-shadow: none;
+        }
+        body.dark-theme .card-header,
+        body.dark-theme .section-title {
+            color: #f5f7fa;
+            border-bottom-color: #3498db;
+        }
+        body.dark-theme .card-footer {
+            color: #95a5a6;
+        }
+        body.dark-theme .btn,
+        body.dark-theme .btn-income,
+        body.dark-theme .btn-expense,
+        body.dark-theme .btn-savings {
+            color: #fff;
+        }
+        body.dark-theme .btn {
+            background: #3498db;
+        }
+        body.dark-theme .btn-income {
+            background: #2ecc71;
+        }
+        body.dark-theme .btn-expense {
+            background: #e74c3c;
+        }
+        body.dark-theme .btn-savings {
+            background: #9b59b6;
+        }
+        body.dark-theme .form-group input,
+        body.dark-theme .form-group select,
+        body.dark-theme .form-group textarea,
+        body.dark-theme .filter-group input,
+        body.dark-theme .filter-group select {
+            background: #232b36;
+            color: #f5f7fa;
+            border-color: #34495e;
+        }
+        body.dark-theme .form-group input:focus,
+        body.dark-theme .form-group select:focus,
+        body.dark-theme .form-group textarea:focus {
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
+        }
+        body.dark-theme .tabs {
+            background: #232b36;
+            border-bottom-color: #34495e;
+        }
+        body.dark-theme .tab {
+            color: #95a5a6;
+        }
+        body.dark-theme .tab.active {
+            color: #3498db;
+            background: rgba(52, 152, 219, 0.08);
+            border-bottom: 3px solid #3498db;
+        }
+        body.dark-theme thead {
+            background: #3498db;
+            color: #fff;
+        }
+        body.dark-theme tbody tr {
+            border-bottom: 1px solid #34495e;
+        }
+        body.dark-theme tbody tr:hover {
+            background-color: rgba(52, 152, 219, 0.08);
+        }
+        body.dark-theme .empty-state {
+            color: #95a5a6;
+        }
+        body.dark-theme .empty-state i {
+            color: #34495e;
+        }
+        body.dark-theme #aiTipsSection {
+            background: linear-gradient(90deg, #232b36 0%, #232b36 100%);
+            color: #f5f7fa;
+            border: 1px solid #34495e;
+        }
+        body.dark-theme .ai-tips-header {
+            color: #6cb6f5;
+        }
+        body.dark-theme .ai-motivation-header {
+            color: #b983e6;
+        }
+        body.dark-theme .amount {
+            color: #f5f7fa;
+        }
+        body.dark-theme .income-row .amount-cell {
+            color: #2ecc71;
+        }
+        body.dark-theme .expense-row .amount-cell {
+            color: #e74c3c;
+        }
+        body.dark-theme .savings-row .amount-cell {
+            color: #9b59b6;
+        }
+        
         /* Responsive adjustments */
         @media (min-width: 480px) {
             .dashboard .card {
@@ -557,6 +671,10 @@
 </head>
 <body>
     <div class="container">
+        <!-- Dark Theme Toggle Button -->
+        <button id="darkThemeToggle" title="Toggle dark mode" style="position:fixed;top:18px;right:18px;z-index:1000;background:#232b36;color:#fff;border:none;border-radius:50%;width:44px;height:44px;box-shadow:0 2px 8px rgba(0,0,0,0.15);font-size:1.3rem;cursor:pointer;transition:background 0.2s;">
+            <i class="fas fa-moon"></i>
+        </button>
         <!-- AI Tips & Motivation Section -->
         <div id="aiTipsSection">
             <div class="ai-tips-content">
@@ -756,23 +874,28 @@
         </div>
     </div>
 
-    <!-- Add Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-<script>
-  // Your Firebase config here
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    // ...other config...
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-</script>
-
     <script>
+        // --- DARK THEME LOGIC ---
+        (function() {
+            const toggleBtn = document.getElementById('darkThemeToggle');
+            const body = document.body;
+            // Load preference
+            if (localStorage.getItem('darkTheme') === 'true' ||
+                (localStorage.getItem('darkTheme') === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                body.classList.add('dark-theme');
+            }
+            function updateIcon() {
+                toggleBtn.innerHTML = body.classList.contains('dark-theme')
+                    ? '<i class="fas fa-sun"></i>'
+                    : '<i class="fas fa-moon"></i>';
+            }
+            updateIcon();
+            toggleBtn.addEventListener('click', function() {
+                body.classList.toggle('dark-theme');
+                localStorage.setItem('darkTheme', body.classList.contains('dark-theme'));
+                updateIcon();
+            });
+        })();
         // On load, set all dashboard values to zero and clear transactions
         document.addEventListener('DOMContentLoaded', function() {
             // --- State ---
