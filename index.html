@@ -567,6 +567,11 @@
         
         <div class="section">
             <h2 class="section-title">Recent Transactions</h2>
+            <div style="margin-bottom:15px;">
+                <label for="dateFilter" style="font-weight:600;">Filter by Date: </label>
+                <input type="date" id="dateFilter" style="padding:6px 10px; border-radius:5px; border:1px solid var(--border); font-size:1rem;">
+                <button id="clearDateFilter" class="btn" style="padding:6px 15px; font-size:0.95rem; margin-left:8px;">Clear</button>
+            </div>
             <div class="card" id="transactionsCard">
                 <div class="table-responsive">
                     <table id="transactionsTable">
@@ -585,10 +590,6 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-            <div class="section" style="margin-top:30px;">
-                <h2 class="section-title">Past History</h2>
-                <div id="historyList"></div>
             </div>
         </div>
     </div>
@@ -658,7 +659,13 @@
             renderMonthFilter();
             const filter = document.getElementById('monthFilter');
             const month = filter && filter.value !== 'all' ? filter.value : null;
-            const transactions = getStoredTransactions().filter(t => !month || getMonthString(t.date) === month);
+            const dateFilter = document.getElementById('dateFilter');
+            const selectedDate = dateFilter && dateFilter.value ? dateFilter.value : null;
+            const transactions = getStoredTransactions().filter(t => {
+                let matchMonth = !month || getMonthString(t.date) === month;
+                let matchDate = !selectedDate || (t.date.split(' ')[0] === selectedDate);
+                return matchMonth && matchDate;
+            });
             const tbody = document.getElementById('transactionsBody');
             tbody.innerHTML = '';
             if (transactions.length === 0) {
@@ -827,7 +834,6 @@
         function renderHistory() {
             const history = getHistory();
             const historyList = document.getElementById('historyList');
-            if (!historyList) return;
             historyList.innerHTML = '';
             const dates = Object.keys(history).sort().reverse();
             if (dates.length === 0) {
@@ -875,6 +881,21 @@
         }
         // On page load
         document.addEventListener('DOMContentLoaded', function() {
+            // Date filter event
+            const dateFilter = document.getElementById('dateFilter');
+            if (dateFilter) {
+                dateFilter.addEventListener('change', function() {
+                    renderTransactions();
+                });
+            }
+            const clearDateFilter = document.getElementById('clearDateFilter');
+            if (clearDateFilter) {
+                clearDateFilter.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (dateFilter) dateFilter.value = '';
+                    renderTransactions();
+                });
+            }
             archiveIfNewDay();
             removeExtraButtons();
             renderTransactions();
