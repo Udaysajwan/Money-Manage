@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal Finance Tracker</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #3498db;
@@ -29,9 +30,11 @@
         }
         
         body {
-            background-color: #f5f7fa;
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e7f1 100%);
             color: var(--dark);
             line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 30px;
         }
         
         .container {
@@ -48,16 +51,44 @@
             margin-bottom: 30px;
             box-shadow: var(--shadow);
             text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+            transform: rotate(30deg);
         }
         
         header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+        }
+        
+        header h1::after {
+            content: "";
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
         }
         
         header p {
             font-size: 1.1rem;
             opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
         }
         
         .dashboard {
@@ -73,12 +104,28 @@
             padding: 20px;
             box-shadow: var(--shadow);
             transition: var(--transition);
+            position: relative;
+            overflow: hidden;
         }
         
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
+        
+        .card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+        }
+        
+        .balance-card::before { background: var(--primary); }
+        .income-card::before { background: var(--income); }
+        .expense-card::before { background: var(--expense); }
+        .savings-card::before { background: var(--savings); }
         
         .card-header {
             display: flex;
@@ -146,6 +193,10 @@
         
         .section {
             margin-bottom: 40px;
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: var(--shadow);
         }
         
         .section-title {
@@ -158,11 +209,12 @@
         }
         
         .form-container {
-            background: white;
+            background: #f9fbfd;
             border-radius: 10px;
             padding: 25px;
-            box-shadow: var(--shadow);
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
             margin-bottom: 30px;
+            border: 1px solid var(--border);
         }
         
         .form-grid {
@@ -192,6 +244,7 @@
             border-radius: 5px;
             font-size: 1rem;
             transition: var(--transition);
+            background: white;
         }
         
         .form-group input:focus, 
@@ -254,6 +307,9 @@
             display: flex;
             margin-bottom: 20px;
             border-bottom: 1px solid var(--border);
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 5px;
         }
         
         .tab {
@@ -263,10 +319,14 @@
             color: var(--gray);
             border-bottom: 3px solid transparent;
             transition: var(--transition);
+            flex: 1;
+            text-align: center;
+            border-radius: 5px;
         }
         
         .tab.active {
             color: var(--primary);
+            background: rgba(52, 152, 219, 0.1);
             border-bottom: 3px solid var(--primary);
         }
         
@@ -289,6 +349,8 @@
         .table-responsive {
             width: 100%;
             overflow-x: auto;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
         thead {
@@ -359,6 +421,59 @@
             color: var(--primary);
         }
         
+        .category-icon {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f0f7ff;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: var(--shadow);
+        }
+        
+        .chart-title {
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+        }
+        
+        .chart-title i {
+            margin-right: 10px;
+            color: var(--primary);
+        }
+        
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: var(--dark);
+            font-size: 0.9rem;
+        }
+        
         @media (max-width: 768px) {
             .dashboard {
                 grid-template-columns: 1fr;
@@ -379,6 +494,13 @@
             }
             .table-responsive {
                 margin-bottom: 20px;
+            }
+            .section {
+                padding: 15px;
+            }
+            .filters {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
         
@@ -408,15 +530,108 @@
             padding: 4px 10px;
             color: #b9770e;
         }
-        @media (max-width: 600px) {
-            .income-summary, .expense-summary {
-                padding: 8px 6px;
-            }
+        
+        #aiTipsSection {
+            background: linear-gradient(90deg, #e3f0ff 0%, #f9f6ff 100%);
+            border-radius: 12px;
+            padding: 22px;
+            margin-bottom: 22px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 24px;
+            border: 1px solid rgba(52, 152, 219, 0.2);
+        }
+        
+        .ai-tips-content {
+            flex: 2 1 320px;
+            min-width: 220px;
+        }
+        
+        .ai-tips-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 7px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .ai-tips-header i {
+            margin-right: 10px;
+        }
+        
+        #aiTipsText {
+            font-size: 1.05rem;
+            color: var(--dark);
+            margin-bottom: 6px;
+            line-height: 1.6;
+        }
+        
+        .ai-motivation {
+            flex: 1 1 220px;
+            min-width: 180px;
+            border-left: 2px solid #d6eaff;
+            padding-left: 18px;
+        }
+        
+        .ai-motivation-header {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--savings);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .ai-motivation-header i {
+            margin-right: 8px;
+        }
+        
+        #aiQuoteText {
+            font-size: 1rem;
+            color: var(--dark);
+            font-style: italic;
+            line-height: 1.6;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 30px;
+            color: var(--gray);
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #d6dbdf;
+        }
+        
+        .empty-state h3 {
+            margin-bottom: 10px;
+            color: var(--dark);
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- AI Tips & Motivation Section -->
+        <div id="aiTipsSection">
+            <div class="ai-tips-content">
+                <div class="ai-tips-header">
+                    <i class="fas fa-robot"></i> Smart Money Tips
+                </div>
+                <div id="aiTipsText">Track your daily expenses to identify spending patterns. Small savings add up significantly over time!</div>
+            </div>
+            <div class="ai-motivation">
+                <div class="ai-motivation-header">
+                    <i class="fas fa-quote-left"></i> Daily Motivation
+                </div>
+                <div id="aiQuoteText">Financial freedom is available to those who learn about it and work for it.</div>
+            </div>
+        </div>
+        
         <header>
             <h1><i class="fas fa-wallet"></i> UDAY Money Management</h1>
             <p>Tracking my income, expenses, and savings in one place</p>
@@ -428,7 +643,7 @@
                     <i class="fas fa-piggy-bank"></i>
                     <h2>Current Balance</h2>
                 </div>
-                <div class="amount" id="currentBalanceAmount">₹0.00</div>
+                <div class="amount" id="currentBalanceAmount">₹12,450.00</div>
                 <div class="card-footer">Updated just now</div>
             </div>
             
@@ -437,12 +652,12 @@
                     <i class="fas fa-arrow-down"></i>
                     <h2>Total Income</h2>
                 </div>
-                <div class="amount" id="totalIncomeAmount">₹0.00</div>
+                <div class="amount" id="totalIncomeAmount">₹25,000.00</div>
                 <div style="margin-top: 10px; font-size: 1rem; color: var(--dark);">
                     <div class="income-summary">
-                        <strong>Income</strong>
-                        <div class="online-row" id="onlineIncomeRow"><strong>Online Income:</strong> ₹0.00</div>
-                        <div class="offline-row" id="offlineIncomeRow"><strong>Offline Income:</strong> ₹0.00</div>
+                        <strong>Income Breakdown</strong>
+                        <div class="online-row" id="onlineIncomeRow"><strong>Online Income:</strong> ₹15,000.00</div>
+                        <div class="offline-row" id="offlineIncomeRow"><strong>Offline Income:</strong> ₹10,000.00</div>
                     </div>
                 </div>
                 <div class="card-footer">This month</div>
@@ -453,12 +668,12 @@
                     <i class="fas fa-arrow-up"></i>
                     <h2>Total Expenses</h2>
                 </div>
-                <div class="amount" id="totalExpenseAmount">₹0.00</div>
+                <div class="amount" id="totalExpenseAmount">₹10,550.00</div>
                 <div style="margin-top: 10px; font-size: 1rem; color: var(--dark);">
                     <div class="expense-summary">
-                        <strong>Expense</strong>
-                        <div class="online-row" id="onlineExpenseRow"><strong>Online Expense:</strong> ₹0.00</div>
-                        <div class="offline-row" id="offlineExpenseRow"><strong>Offline Expense:</strong> ₹0.00</div>
+                        <strong>Expense Breakdown</strong>
+                        <div class="online-row" id="onlineExpenseRow"><strong>Online Expense:</strong> ₹6,200.00</div>
+                        <div class="offline-row" id="offlineExpenseRow"><strong>Offline Expense:</strong> ₹4,350.00</div>
                     </div>
                 </div>
                 <div class="card-footer">This month</div>
@@ -469,7 +684,7 @@
                     <i class="fas fa-lock"></i>
                     <h2>Savings Account</h2>
                 </div>
-                <div class="amount" id="savingsAmount">₹0.00</div>
+                <div class="amount" id="savingsAmount">₹2,000.00</div>
                 <div class="card-footer">Offline savings</div>
             </div>
         </div>
@@ -518,10 +733,6 @@
                                 <label for="transactionAmount">Amount (₹)</label>
                                 <input type="number" id="transactionAmount" step="0.01" min="0" placeholder="0.00" required>
                             </div>
-                            <div class="form-group">
-                                <!-- Date and time will be set automatically -->
-                                <input type="hidden" id="transactionDate">
-                            </div>
                         </div>
                         <div class="form-group">
                             <label for="transactionDescription">Description</label>
@@ -534,8 +745,8 @@
                     <form id="savingsForm">
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="savingsAmount">Amount (₹)</label>
-                                <input type="number" id="savingsAmount" step="0.01" min="0" placeholder="0.00" required>
+                                <label for="savingsAmountInput">Amount (₹)</label>
+                                <input type="number" id="savingsAmountInput" step="0.01" min="0" placeholder="0.00" required>
                             </div>
                             
                             <div class="form-group">
@@ -567,10 +778,21 @@
         
         <div class="section">
             <h2 class="section-title">Recent Transactions</h2>
-            <div style="margin-bottom:15px;">
-                <label for="dateFilter" style="font-weight:600;">Filter by Date: </label>
-                <input type="date" id="dateFilter" style="padding:6px 10px; border-radius:5px; border:1px solid var(--border); font-size:1rem;">
-                <button id="clearDateFilter" class="btn" style="padding:6px 15px; font-size:0.95rem; margin-left:8px;">Clear</button>
+            <div class="filters">
+                <div class="filter-group">
+                    <label for="dateFilter">Filter by Date</label>
+                    <input type="date" id="dateFilter" style="padding:8px 12px; border-radius:5px; border:1px solid var(--border); font-size:1rem;">
+                </div>
+                <div class="filter-group">
+                    <label for="typeFilter">Filter by Type</label>
+                    <select id="typeFilter" style="padding:8px 12px; border-radius:5px; border:1px solid var(--border); font-size:1rem; width: 100%;">
+                        <option value="all">All Types</option>
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                        <option value="savings">Savings</option>
+                    </select>
+                </div>
+                <button id="clearDateFilter" class="btn" style="margin-top: 22px; padding:8px 15px; font-size:0.95rem;">Clear Filters</button>
             </div>
             <div class="card" id="transactionsCard">
                 <div class="table-responsive">
@@ -586,323 +808,59 @@
                             </tr>
                         </thead>
                         <tbody id="transactionsBody">
-                            <!-- Transactions will be rendered here by JS -->
+                            <tr class="income-row">
+                                <td>2023-10-15 09:00:00</td>
+                                <td>Income</td>
+                                <td><div class="category-icon"><i class="fas fa-money-bill-wave"></i></div> Salary</td>
+                                <td>Monthly salary</td>
+                                <td class="amount-cell">₹15,000.00</td>
+                                <td class="action-cell"><button title="Delete"><i class="fas fa-trash"></i></button></td>
+                            </tr>
+                            <tr class="expense-row">
+                                <td>2023-10-16 13:30:00</td>
+                                <td>Expense</td>
+                                <td><div class="category-icon"><i class="fas fa-utensils"></i></div> Food & Dining</td>
+                                <td>Lunch at restaurant</td>
+                                <td class="amount-cell">₹850.00</td>
+                                <td class="action-cell"><button title="Delete"><i class="fas fa-trash"></i></button></td>
+                            </tr>
+                            <tr class="expense-row">
+                                <td>2023-10-17 10:15:00</td>
+                                <td>Expense</td>
+                                <td><div class="category-icon"><i class="fas fa-shopping-cart"></i></div> Shopping</td>
+                                <td>New clothes</td>
+                                <td class="amount-cell">₹2,500.00</td>
+                                <td class="action-cell"><button title="Delete"><i class="fas fa-trash"></i></button></td>
+                            </tr>
+                            <tr class="savings-row">
+                                <td>2023-10-18 14:00:00</td>
+                                <td>Savings</td>
+                                <td><div class="category-icon"><i class="fas fa-piggy-bank"></i></div> Cash Savings</td>
+                                <td>Monthly savings deposit</td>
+                                <td class="amount-cell">₹2,000.00</td>
+                                <td class="action-cell"><button title="Delete"><i class="fas fa-trash"></i></button></td>
+                            </tr>
+                            <tr class="income-row">
+                                <td>2023-10-19 16:45:00</td>
+                                <td>Income</td>
+                                <td><div class="category-icon"><i class="fas fa-gift"></i></div> Gift</td>
+                                <td>Birthday gift from parents</td>
+                                <td class="amount-cell">₹5,000.00</td>
+                                <td class="action-cell"><button title="Delete"><i class="fas fa-trash"></i></button></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+        
+        <!-- Charts removed -->
     </div>
 
     <script>
-        // Transaction data management
-        function getToday() {
-            return new Date().toISOString().split('T')[0];
-        }
-        function getStoredTransactions() {
-            return JSON.parse(localStorage.getItem('transactions') || '[]');
-        }
-        function setStoredTransactions(transactions) {
-            localStorage.setItem('transactions', JSON.stringify(transactions));
-        }
-        function getHistory() {
-            return JSON.parse(localStorage.getItem('transactionHistory') || '{}');
-        }
-        function setHistory(history) {
-            localStorage.setItem('transactionHistory', JSON.stringify(history));
-        }
-        function archiveIfNewDay() {
-            const lastDate = localStorage.getItem('lastTransactionDate');
-            const today = getToday();
-            if (lastDate && lastDate !== today) {
-                // Archive yesterday's transactions
-                const transactions = getStoredTransactions();
-                if (transactions.length > 0) {
-                    const history = getHistory();
-                    history[lastDate] = transactions;
-                    setHistory(history);
-                }
-                setStoredTransactions([]); // Clear for new day
-            }
-            localStorage.setItem('lastTransactionDate', today);
-        }
-        function calculateDashboard() {
-            const transactions = getStoredTransactions();
-            let totalIncome = 0, totalExpense = 0, totalSavings = 0, balance = 0;
-            let onlineIncome = 0, offlineIncome = 0, onlineExpense = 0, offlineExpense = 0;
-            transactions.forEach(tx => {
-                if (tx.type === 'income') {
-                    totalIncome += parseFloat(tx.amount);
-                    balance += parseFloat(tx.amount);
-                    if (tx.mode === 'online') onlineIncome += parseFloat(tx.amount);
-                    if (tx.mode === 'offline') offlineIncome += parseFloat(tx.amount);
-                } else if (tx.type === 'expense') {
-                    totalExpense += parseFloat(tx.amount);
-                    balance -= parseFloat(tx.amount);
-                    if (tx.mode === 'online') onlineExpense += parseFloat(tx.amount);
-                    if (tx.mode === 'offline') offlineExpense += parseFloat(tx.amount);
-                } else if (tx.type === 'savings') {
-                    totalSavings += parseFloat(tx.amount);
-                    balance -= parseFloat(tx.amount);
-                }
-            });
-            document.getElementById('currentBalanceAmount').textContent = '₹' + balance.toFixed(2);
-            document.getElementById('totalIncomeAmount').textContent = '₹' + totalIncome.toFixed(2);
-            document.getElementById('totalExpenseAmount').textContent = '₹' + totalExpense.toFixed(2);
-            document.getElementById('savingsAmount').textContent = '₹' + totalSavings.toFixed(2);
-            document.getElementById('onlineIncomeRow').innerHTML = '<strong>Online Income:</strong> ₹' + onlineIncome.toFixed(2);
-            document.getElementById('offlineIncomeRow').innerHTML = '<strong>Offline Income:</strong> ₹' + offlineIncome.toFixed(2);
-            document.getElementById('onlineExpenseRow').innerHTML = '<strong>Online Expense:</strong> ₹' + onlineExpense.toFixed(2);
-            document.getElementById('offlineExpenseRow').innerHTML = '<strong>Offline Expense:</strong> ₹' + offlineExpense.toFixed(2);
-        }
-        function renderTransactions() {
-            renderMonthFilter();
-            const filter = document.getElementById('monthFilter');
-            const month = filter && filter.value !== 'all' ? filter.value : null;
-            const dateFilter = document.getElementById('dateFilter');
-            const selectedDate = dateFilter && dateFilter.value ? dateFilter.value : null;
-            const transactions = getStoredTransactions().filter(t => {
-                let matchMonth = !month || getMonthString(t.date) === month;
-                let matchDate = !selectedDate || (t.date.split(' ')[0] === selectedDate);
-                return matchMonth && matchDate;
-            });
-            const tbody = document.getElementById('transactionsBody');
-            tbody.innerHTML = '';
-            if (transactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--gray);">No transactions for this period.</td></tr>';
-                calculateDashboard();
-                return;
-            }
-            transactions.forEach((tx, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = tx.type === 'income' ? 'income-row' : (tx.type === 'expense' ? 'expense-row' : 'savings-row');
-                // Only show delete button for today's transactions
-                let showDelete = false;
-                if ((tx.type === 'income' || tx.type === 'expense')) {
-                    // Accept both 'YYYY-MM-DD' and 'YYYY-MM-DD HH:MM:SS' date formats
-                    let txDate = tx.date.split(' ')[0];
-                    if (txDate === getToday()) showDelete = true;
-                }
-                tr.innerHTML = `
-                    <td>${tx.date}</td>
-                    <td>${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</td>
-                    <td>${tx.category || ''}</td>
-                    <td>${tx.description || ''}</td>
-                    <td class="amount-cell">₹${parseFloat(tx.amount).toFixed(2)}</td>
-                    <td class="action-cell">${showDelete ? `<button title="Delete" onclick="deleteTransaction(${idx})"><i class="fas fa-trash"></i></button>` : ''}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            calculateDashboard();
-        }
-        // Utility: Format date to yyyy-mm for month filter
-        function getMonthString(dateStr) {
-            return dateStr.slice(0, 7);
-        }
-        // Export transactions to CSV
-        function exportToCSV() {
-            const transactions = getStoredTransactions();
-            if (!transactions.length) { alert('No transactions to export.'); return; }
-            const header = Object.keys(transactions[0]);
-            const csv = [header.join(',')].concat(transactions.map(t => header.map(h => '"'+(t[h]||'')+'"').join(','))).join('\n');
-            const blob = new Blob([csv], {type: 'text/csv'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'transactions.csv';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
-        // Import transactions from CSV
-        function importFromCSV(file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const lines = e.target.result.split(/\r?\n/);
-                const header = lines[0].split(',');
-                const data = lines.slice(1).filter(Boolean).map(line => {
-                    const values = line.split(',').map(v => v.replace(/^"|"$/g, ''));
-                    const obj = {};
-                    header.forEach((h, i) => obj[h] = values[i]);
-                    return obj;
-                });
-                setStoredTransactions(data);
-                renderTransactions();
-                calculateDashboard();
-            };
-            reader.readAsText(file);
-        }
-        // Add sample/test data
-        function addSampleData() {
-            const today = getToday();
-            const now = new Date();
-            const pad = n => String(n).padStart(2, '0');
-            const sample = [
-                {type:'income',mode:'online',category:'salary',amount:'5000',date:`${today} 09:00:00`,description:'Salary'},
-                {type:'expense',mode:'offline',category:'food',amount:'200',date:`${today} 13:00:00`,description:'Lunch'},
-                {type:'expense',mode:'online',category:'shopping',amount:'1200',date:`${today} 18:00:00`,description:'Clothes'},
-                {type:'income',mode:'offline',category:'gift',amount:'1000',date:`${today} 20:00:00`,description:'Gift from friend'},
-                {type:'expense',mode:'offline',category:'transport',amount:'100',date:`${today} 08:30:00`,description:'Bus fare'}
-            ];
-            setStoredTransactions(sample);
-            renderTransactions();
-            calculateDashboard();
-        }
-        // Filter transactions by month
-        function renderMonthFilter() {
-            const transactions = getStoredTransactions();
-            const months = Array.from(new Set(transactions.map(t => getMonthString(t.date))));
-            let filter = document.getElementById('monthFilter');
-            if (!filter) {
-                filter = document.createElement('select');
-                filter.id = 'monthFilter';
-                filter.className = 'form-select';
-                filter.style = 'max-width:200px;margin-bottom:15px;';
-                filter.innerHTML = '<option value="all">All Months</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
-                filter.onchange = renderTransactions;
-                document.querySelector('.section-title').insertAdjacentElement('afterend', filter);
-            } else {
-                filter.innerHTML = '<option value="all">All Months</option>' + months.map(m => `<option value="${m}">${m}</option>`).join('');
-            }
-        }
-        // Remove quick add and export/import/sample buttons if present
-        function removeExtraButtons() {
-            const quickDiv = document.getElementById('quickAddBtns');
-            if (quickDiv) quickDiv.remove();
-            const btnDiv = document.getElementById('exportImportBtns');
-            if (btnDiv) btnDiv.remove();
-        }
-        // Quick add buttons
-        function renderQuickAddButtons() {
-            let quickDiv = document.getElementById('quickAddBtns');
-            if (!quickDiv) {
-                quickDiv = document.createElement('div');
-                quickDiv.id = 'quickAddBtns';
-                quickDiv.style = 'margin-bottom:15px;';
-                quickDiv.innerHTML = `<button class='btn btn-income' style='margin-right:10px;' onclick='quickAddIncome()'><i class="fas fa-plus"></i> Add ₹100 Income</button><button class='btn btn-expense' onclick='quickAddExpense()'><i class="fas fa-minus"></i> Add ₹50 Expense</button>`;
-                document.querySelector('.section-title').insertAdjacentElement('afterend', quickDiv);
-            }
-        }
-        function quickAddIncome() {
-            const now = new Date();
-            const date = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
-            const tx = { type:'income', mode:'online', category:'quick', amount:'100', date, description:'Quick add income' };
-            const transactions = getStoredTransactions();
-            transactions.push(tx);
-            setStoredTransactions(transactions);
-            renderTransactions();
-            calculateDashboard();
-        }
-        function quickAddExpense() {
-            const now = new Date();
-            const date = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
-            const tx = { type:'expense', mode:'offline', category:'quick', amount:'50', date, description:'Quick add expense' };
-            const transactions = getStoredTransactions();
-            transactions.push(tx);
-            setStoredTransactions(transactions);
-            renderTransactions();
-            calculateDashboard();
-        }
-        // ...existing code...
-        function renderTransactions() {
-            renderMonthFilter();
-            const filter = document.getElementById('monthFilter');
-            const month = filter && filter.value !== 'all' ? filter.value : null;
-            const transactions = getStoredTransactions().filter(t => !month || getMonthString(t.date) === month);
-            const tbody = document.getElementById('transactionsBody');
-            tbody.innerHTML = '';
-            if (transactions.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--gray);">No transactions for this period.</td></tr>';
-                calculateDashboard();
-                return;
-            }
-            transactions.forEach((tx, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = tx.type === 'income' ? 'income-row' : (tx.type === 'expense' ? 'expense-row' : 'savings-row');
-                tr.innerHTML = `
-                    <td>${tx.date}</td>
-                    <td>${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</td>
-                    <td>${tx.category || ''}</td>
-                    <td>${tx.description || ''}</td>
-                    <td class="amount-cell">₹${parseFloat(tx.amount).toFixed(2)}</td>
-                    <td class="action-cell">${tx.type === 'income' || tx.type === 'expense' ? `<button title="Delete" onclick="deleteTransaction(${idx})"><i class="fas fa-trash"></i></button>` : ''}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-            calculateDashboard();
-        }
-        function renderHistory() {
-            const history = getHistory();
-            const historyList = document.getElementById('historyList');
-            historyList.innerHTML = '';
-            const dates = Object.keys(history).sort().reverse();
-            if (dates.length === 0) {
-                historyList.innerHTML = '<div style="color:var(--gray);text-align:center;">No past transaction history.</div>';
-                return;
-            }
-            dates.forEach(date => {
-                const txs = history[date];
-                const section = document.createElement('div');
-                section.style.marginBottom = '18px';
-                section.innerHTML = `<div style="font-weight:600; color:var(--primary); margin-bottom:4px;">${date}</div>`;
-                if (txs.length === 0) {
-                    section.innerHTML += '<div style="color:var(--gray);">No transactions.</div>';
-                } else {
-                    section.innerHTML += '<div class="table-responsive"><table style="width:100%;border-collapse:collapse;background:white;border-radius:8px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:8px;">' +
-                        '<thead><tr><th>Date</th><th>Type</th><th>Category/Source</th><th>Description</th><th>Amount</th></tr></thead>' +
-                        '<tbody>' +
-                        txs.map(tx => `
-                            <tr class="${tx.type === 'income' ? 'income-row' : (tx.type === 'expense' ? 'expense-row' : 'savings-row')}">
-                                <td>${tx.date}</td>
-                                <td>${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</td>
-                                <td>${tx.category || tx.source || ''}</td>
-                                <td>${tx.description || ''}</td>
-                                <td class="amount-cell">₹${parseFloat(tx.amount).toFixed(2)}</td>
-                            </tr>
-                        `).join('') +
-                        '</tbody></table></div>';
-                }
-                historyList.appendChild(section);
-            });
-        }
-        function deleteTransaction(idx) {
-            const transactions = getStoredTransactions();
-            transactions.splice(idx, 1);
-            setStoredTransactions(transactions);
-            renderTransactions();
-        }
-        function clearAllData() {
-            localStorage.removeItem('transactions');
-            localStorage.removeItem('transactionHistory');
-            localStorage.removeItem('lastTransactionDate');
-            renderTransactions();
-            renderHistory();
-            calculateDashboard();
-        }
-        // On page load
+        // Remove charts and reset all dashboard values to zero
+        // Restore correct dashboard and transaction logic
         document.addEventListener('DOMContentLoaded', function() {
-            // Date filter event
-            const dateFilter = document.getElementById('dateFilter');
-            if (dateFilter) {
-                dateFilter.addEventListener('change', function() {
-                    renderTransactions();
-                });
-            }
-            const clearDateFilter = document.getElementById('clearDateFilter');
-            if (clearDateFilter) {
-                clearDateFilter.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (dateFilter) dateFilter.value = '';
-                    renderTransactions();
-                });
-            }
-            archiveIfNewDay();
-            removeExtraButtons();
-            renderTransactions();
-            renderHistory();
-            // Remove monthly summary card if present
-            const summary = document.getElementById('monthlySummary');
-            if (summary) summary.remove();
             // Tab switching functionality
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
@@ -914,6 +872,7 @@
                     document.getElementById(`${tabId}-form`).classList.add('active');
                 });
             });
+
             // Show/hide source/category based on transaction type
             const transactionType = document.getElementById('transactionType');
             const expenseCategoryGroup = document.getElementById('expenseCategoryGroup');
@@ -926,65 +885,145 @@
                     expenseCategoryGroup.style.display = 'none';
                 }
             });
-            // Transaction form submission (add transaction to today)
+
+            // Set today's date as default for savings form
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('savingsDate').value = today;
+
+            // Filter functionality
+            const dateFilter = document.getElementById('dateFilter');
+            const typeFilter = document.getElementById('typeFilter');
+            const clearFilterBtn = document.getElementById('clearDateFilter');
+
+            dateFilter.value = '';
+
+            clearFilterBtn.addEventListener('click', function() {
+                dateFilter.value = '';
+                typeFilter.value = 'all';
+                filterTransactions();
+            });
+
+            dateFilter.addEventListener('change', filterTransactions);
+            typeFilter.addEventListener('change', filterTransactions);
+
+            function filterTransactions() {
+                const rows = document.querySelectorAll('#transactionsBody tr');
+                const selectedDate = dateFilter.value;
+                const selectedType = typeFilter.value;
+
+                rows.forEach(row => {
+                    const rowDate = row.cells[0].textContent.split(' ')[0];
+                    const rowType = row.cells[1].textContent.toLowerCase();
+
+                    const dateMatch = !selectedDate || rowDate === selectedDate;
+                    const typeMatch = selectedType === 'all' || rowType === selectedType;
+
+                    if (dateMatch && typeMatch) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+
+            // Form submission handlers
+            // --- Transaction Data State ---
+            let transactions = [];
+
+            function updateDashboard() {
+                let totalIncome = 0, totalExpense = 0, totalSavings = 0, balance = 0;
+                let onlineIncome = 0, offlineIncome = 0, onlineExpense = 0, offlineExpense = 0;
+                transactions.forEach(tx => {
+                    const amt = parseFloat(tx.amount) || 0;
+                    if (tx.type === 'income') {
+                        totalIncome += amt;
+                        balance += amt;
+                        if (tx.mode === 'online') onlineIncome += amt;
+                        if (tx.mode === 'offline') offlineIncome += amt;
+                    } else if (tx.type === 'expense') {
+                        totalExpense += amt;
+                        balance -= amt;
+                        if (tx.mode === 'online') onlineExpense += amt;
+                        if (tx.mode === 'offline') offlineExpense += amt;
+                    } else if (tx.type === 'savings') {
+                        totalSavings += amt;
+                        balance -= amt;
+                    }
+                });
+                document.getElementById('currentBalanceAmount').textContent = '₹' + balance.toFixed(2);
+                document.getElementById('totalIncomeAmount').textContent = '₹' + totalIncome.toFixed(2);
+                document.getElementById('totalExpenseAmount').textContent = '₹' + totalExpense.toFixed(2);
+                document.getElementById('savingsAmount').textContent = '₹' + totalSavings.toFixed(2);
+                document.getElementById('onlineIncomeRow').innerHTML = '<strong>Online Income:</strong> ₹' + onlineIncome.toFixed(2);
+                document.getElementById('offlineIncomeRow').innerHTML = '<strong>Offline Income:</strong> ₹' + offlineIncome.toFixed(2);
+                document.getElementById('onlineExpenseRow').innerHTML = '<strong>Online Expense:</strong> ₹' + onlineExpense.toFixed(2);
+                document.getElementById('offlineExpenseRow').innerHTML = '<strong>Offline Expense:</strong> ₹' + offlineExpense.toFixed(2);
+            }
+
+            function renderTransactionsTable() {
+                const tbody = document.getElementById('transactionsBody');
+                tbody.innerHTML = '';
+                transactions.forEach(tx => {
+                    const tr = document.createElement('tr');
+                    tr.className = tx.type === 'income' ? 'income-row' : (tx.type === 'expense' ? 'expense-row' : 'savings-row');
+                    tr.innerHTML = `
+                        <td>${tx.date}</td>
+                        <td>${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</td>
+                        <td>${tx.category || ''}</td>
+                        <td>${tx.description || ''}</td>
+                        <td class="amount-cell">₹${parseFloat(tx.amount).toFixed(2)}</td>
+                        <td class="action-cell"><button title="Delete"><i class="fas fa-trash"></i></button></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                filterTransactions();
+            }
+
             document.getElementById('transactionForm').addEventListener('submit', function(e) {
                 e.preventDefault();
                 const type = document.getElementById('transactionType').value;
                 const mode = document.getElementById('transactionMode').value;
-                let category = '';
-                if (type === 'expense') {
-                    category = document.getElementById('expenseCategory').value;
-                } else if (type === 'income') {
-                    category = 'income';
-                }
+                const category = type === 'expense' ? document.getElementById('expenseCategory').value : type === 'income' ? 'Income' : '';
                 const amount = document.getElementById('transactionAmount').value;
                 const description = document.getElementById('transactionDescription').value;
-                if (!type || !mode || !amount) {
-                    alert('Please fill all required fields.');
-                    return;
-                }
-                // Get current date and time (always as YYYY-MM-DD for today)
                 const now = new Date();
                 const date = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0') + '-' + String(now.getDate()).padStart(2,'0') + ' ' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
-                const tx = { type, mode, category, amount, date, description };
-                let transactions = getStoredTransactions();
-                if (!Array.isArray(transactions)) transactions = [];
-                transactions.push(tx);
-                setStoredTransactions(transactions);
-                renderTransactions();
-                calculateDashboard();
+                transactions.push({ type, mode, category, amount, date, description });
+                renderTransactionsTable();
+                updateDashboard();
                 this.reset();
-                document.getElementById('expenseCategoryGroup').style.display = 'none';
             });
-            // Savings form handler: actually add savings transaction
+
             document.getElementById('savingsForm').addEventListener('submit', function(e) {
                 e.preventDefault();
-                const amount = document.getElementById('savingsAmount').value;
-                const date = document.getElementById('savingsDate').value || getToday();
+                const amount = document.getElementById('savingsAmountInput').value;
+                const date = document.getElementById('savingsDate').value;
                 const source = document.getElementById('savingsSource').value;
                 const description = document.getElementById('savingsDescription').value;
-                if (!amount || !date || !source) {
-                    alert('Please fill all required fields.');
-                    return;
-                }
-                // Add as a savings transaction
-                const tx = {
-                    type: 'savings',
-                    mode: 'offline',
-                    category: source,
-                    amount: amount,
-                    date: date,
-                    description: description
-                };
-                const transactions = getStoredTransactions();
-                transactions.push(tx);
-                setStoredTransactions(transactions);
-                renderTransactions();
-                calculateDashboard();
-                alert('Savings deposit added successfully!');
+                transactions.push({ type: 'savings', mode: 'offline', category: source, amount, date, description });
+                renderTransactionsTable();
+                updateDashboard();
                 this.reset();
-                document.getElementById('savingsDate').value = getToday();
+                document.getElementById('savingsDate').value = today;
             });
+
+            // Delete transaction
+            document.getElementById('transactionsBody').addEventListener('click', function(e) {
+                if (e.target.closest('button')) {
+                    const row = e.target.closest('tr');
+                    if (confirm('Are you sure you want to delete this transaction?')) {
+                        const idx = Array.from(row.parentNode.children).indexOf(row);
+                        transactions.splice(idx, 1);
+                        renderTransactionsTable();
+                        updateDashboard();
+                    }
+                }
+            });
+
+            // Initialize: clear table and dashboard
+            transactions = [];
+            renderTransactionsTable();
+            updateDashboard();
         });
     </script>
 </body>
